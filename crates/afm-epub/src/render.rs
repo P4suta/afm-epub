@@ -1,11 +1,10 @@
 //! Phase 2 — render afm sources into XHTML spine items.
 //!
-//! Each source byte buffer is decoded (UTF-8 by default; SJIS via
-//! [`aozora_encoding::decode_sjis`] when the source path's extension
-//! signals it) and handed to
-//! [`afm_markdown::render_to_string`]. The resulting HTML is wrapped
-//! in an XHTML 1.1 strict envelope with the manuscript language and
-//! a stylesheet link the package phase will resolve.
+//! Each source is decoded (UTF-8, or SJIS via
+//! [`aozora_encoding::decode_sjis`] for `.sjis`/`.shift_jis`), rendered
+//! by [`afm_markdown::render_to_string`], and wrapped in an XHTML (HTML5
+//! doctype) envelope carrying the manuscript language and a stylesheet
+//! link.
 
 use afm_markdown::{Options, render_to_string};
 
@@ -99,4 +98,29 @@ fn escape_attr(s: &str) -> String {
         .replace('>', "&gt;")
         .replace('"', "&quot;")
         .replace('\'', "&#39;")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const CSS: &str = include_str!("../assets/afm.css");
+
+    /// The body class each writing mode emits must have a matching
+    /// selector in the bundled stylesheet, or the mode's CSS never applies.
+    #[test]
+    fn every_writing_mode_body_class_is_styled() {
+        for mode in [WritingMode::Horizontal, WritingMode::Vertical] {
+            let xhtml = wrap_xhtml("title", "", "ja", mode);
+            let class = xhtml
+                .split("<body class=\"")
+                .nth(1)
+                .and_then(|rest| rest.split('"').next())
+                .expect("rendered body carries a class attribute");
+            assert!(
+                CSS.contains(&format!(".{class}")),
+                "afm.css has no selector for body class {class:?}"
+            );
+        }
+    }
 }

@@ -1,8 +1,4 @@
-/*
- * Default afm-epub stylesheet. Mirrors the class catalogue emitted by
- * afm's HTML renderer; reading-system support varies, so per-EPUB
- * overrides may be useful (provide via metadata.extra_css later).
- */
+/* Default afm-epub stylesheet for the classes afm's HTML renderer emits. */
 
 html, body {
   font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho Pro", serif;
@@ -29,14 +25,14 @@ ruby rt {
 
 .afm-page-break { break-after: page; }
 
-.afm--horizontal { writing-mode: horizontal-tb; }
-.afm--horizontal .afm-tcy { text-combine-upright: none; }
+.afm-horizontal { writing-mode: horizontal-tb; }
+.afm-horizontal .afm-tcy { text-combine-upright: none; }
 
-.afm--vertical {
+.afm-vertical {
   writing-mode: vertical-rl;
   text-orientation: upright;
   font-feature-settings: "vert", "vrt2";
 }
-.afm--vertical .afm-bouten {
+.afm-vertical .afm-bouten {
   text-emphasis-position: var(--afm-bouten-position, "right");
 }

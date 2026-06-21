@@ -251,9 +251,24 @@ fn package_opf(
         .map_err(|e| xml_to_err(&e))?;
 
     // spine
-    w.write_event(Event::Start(BytesStart::new("spine")))
+    write_spine(&mut w, meta.writing_mode, rendered.items.len())?;
+
+    w.write_event(Event::End(BytesEnd::new("package")))
         .map_err(|e| xml_to_err(&e))?;
-    for i in 0..rendered.items.len() {
+
+    finish_writer(w)
+}
+
+fn write_spine<W: std::io::Write>(
+    w: &mut Writer<W>,
+    mode: WritingMode,
+    count: usize,
+) -> Result<()> {
+    let mut spine = BytesStart::new("spine");
+    spine.push_attribute(("page-progression-direction", page_progression_dir(mode)));
+    w.write_event(Event::Start(spine))
+        .map_err(|e| xml_to_err(&e))?;
+    for i in 0..count {
         let id = format!("ch{:03}", i + 1);
         let mut idref = BytesStart::new("itemref");
         idref.push_attribute(("idref", id.as_str()));
@@ -262,11 +277,18 @@ fn package_opf(
     }
     w.write_event(Event::End(BytesEnd::new("spine")))
         .map_err(|e| xml_to_err(&e))?;
+    Ok(())
+}
 
-    w.write_event(Event::End(BytesEnd::new("package")))
-        .map_err(|e| xml_to_err(&e))?;
-
-    finish_writer(w)
+/// EPUB spine `page-progression-direction`: vertical books bind and
+/// page right-to-left, horizontal left-to-right. Emitting it explicitly
+/// (instead of omitting it and letting the reading system infer from
+/// `dc:language`) keeps both writing modes deterministic across readers.
+const fn page_progression_dir(mode: WritingMode) -> &'static str {
+    match mode {
+        WritingMode::Vertical => "rtl",
+        WritingMode::Horizontal => "ltr",
+    }
 }
 
 fn write_dc<W: std::io::Write>(
@@ -433,12 +455,26 @@ mod tests {
     }
 
     fn dummy_metadata(title: &str, creator: &str, language: &str) -> crate::discover::Metadata {
+        dummy_metadata_mode(
+            title,
+            creator,
+            language,
+            crate::discover::WritingMode::Horizontal,
+        )
+    }
+
+    fn dummy_metadata_mode(
+        title: &str,
+        creator: &str,
+        language: &str,
+        writing_mode: crate::discover::WritingMode,
+    ) -> crate::discover::Metadata {
         crate::discover::Metadata {
             title: title.to_owned(),
             creator: creator.to_owned(),
             language: language.to_owned(),
             identifier: None,
-            writing_mode: crate::discover::WritingMode::Horizontal,
+            writing_mode,
         }
     }
 
@@ -491,6 +527,35 @@ mod tests {
         assert!(opf.contains("山田&quot;太郎&quot;"), "opf: {opf}");
         // No double-encoding.
         assert!(!opf.contains("&amp;amp;"), "opf: {opf}");
+    }
+
+    fn opf_for_mode(mode: crate::discover::WritingMode) -> String {
+        let meta = dummy_metadata_mode("T", "A", "ja", mode);
+        let rendered = RenderOutput { items: vec![] };
+        let now = DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+        package_opf(&meta, "urn:uuid:test", &rendered, now).unwrap()
+    }
+
+    #[test]
+    fn spine_vertical_emits_rtl_page_progression() {
+        let opf = opf_for_mode(crate::discover::WritingMode::Vertical);
+        assert!(
+            opf.contains(r#"<spine page-progression-direction="rtl">"#),
+            "opf: {opf}"
+        );
+    }
+
+    #[test]
+    fn spine_horizontal_emits_ltr_page_progression() {
+        let opf = opf_for_mode(crate::discover::WritingMode::Horizontal);
+        assert!(
+            opf.contains(r#"<spine page-progression-direction="ltr">"#),
+            "opf: {opf}"
+        );
+        // Never emit a bare <spine> without an explicit direction.
+        assert!(!opf.contains("<spine>"), "opf: {opf}");
     }
 
     #[test]

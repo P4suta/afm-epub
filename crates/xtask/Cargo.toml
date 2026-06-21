@@ -4,7 +4,7 @@ version       = { workspace = true }
 edition       = { workspace = true }
 rust-version  = { workspace = true }
 license       = { workspace = true }
-description   = "afm-epub developer automation (publish-to-publish, ADR scaffold, …)"
+description   = "aozora-flavored-markdown-epub developer automation (publish-to-publish, ADR scaffold, …)"
 authors       = { workspace = true }
 publish       = false
 

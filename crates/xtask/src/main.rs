@@ -1,4 +1,4 @@
-//! Developer automation. Mirrors the role of `afm`'s `xtask`:
+//! Developer automation. Mirrors the role of `aozora-flavored-markdown`'s `xtask`:
 //! generate ADR scaffolding, run release-prep checks, drive
 //! end-to-end pipeline tests against `examples/`.
 

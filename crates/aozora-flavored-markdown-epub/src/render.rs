@@ -17,7 +17,7 @@ pub struct SpineItem {
     pub href: String,
     /// `<title>` element of the chapter.
     pub title: String,
-    /// Full XHTML document — already HTML-escaped by afm-markdown.
+    /// Full XHTML document — already HTML-escaped by aozora-flavored-markdown.
     pub xhtml: String,
 }
 

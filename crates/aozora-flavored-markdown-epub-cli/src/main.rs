@@ -1,11 +1,12 @@
-//! `afm-epub` CLI — thin clap wrapper over the `afm_epub` library.
+//! `aozora-flavored-markdown-epub` CLI — thin clap wrapper over the
+//! `aozora_flavored_markdown_epub` library.
 
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[command(name = "afm-epub", version, about, propagate_version = true)]
+#[command(name = "aozora-flavored-markdown-epub", version, about, propagate_version = true)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -15,7 +16,7 @@ struct Cli {
 enum Cmd {
     /// Build an EPUB3 from a manuscript directory.
     Build {
-        /// Input directory or single afm file.
+        /// Input directory or single Aozora Flavored Markdown file.
         #[arg(long)]
         input: PathBuf,
         /// `book.toml` metadata path.
@@ -34,7 +35,7 @@ fn main() -> miette::Result<()> {
             input,
             metadata,
             output,
-        } => afm_epub::build(&afm_epub::BuildOptions {
+        } => aozora_flavored_markdown_epub::build(&aozora_flavored_markdown_epub::BuildOptions {
             input: &input,
             metadata: &metadata,
             output: &output,

@@ -1,8 +1,8 @@
 [workspace]
 resolver = "3"
 members  = [
-    "crates/afm-epub",
-    "crates/afm-epub-cli",
+    "crates/aozora-flavored-markdown-epub",
+    "crates/aozora-flavored-markdown-epub-cli",
     "crates/xtask",
 ]
 
@@ -11,10 +11,10 @@ version       = "0.1.0"
 edition       = "2024"
 rust-version  = "1.96.0"
 license       = "Apache-2.0 OR MIT"
-description   = "EPUB3 generator for Aozora Flavored Markdown (afm)"
-repository    = "https://github.com/P4suta/afm-epub"
-homepage      = "https://github.com/P4suta/afm-epub"
-authors       = ["afm-epub contributors"]
+description   = "EPUB3 generator for Aozora Flavored Markdown"
+repository    = "https://github.com/P4suta/aozora-flavored-markdown-epub"
+homepage      = "https://github.com/P4suta/aozora-flavored-markdown-epub"
+authors       = ["aozora-flavored-markdown-epub contributors"]
 readme        = "README.md"
 keywords      = ["epub", "epub3", "markdown", "aozora", "japanese"]
 categories    = ["text-processing", "command-line-utilities"]

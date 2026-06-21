@@ -1,5 +1,5 @@
 [package]
-name          = "afm-epub"
+name          = "aozora-flavored-markdown-epub"
 version       = { workspace = true }
 edition       = { workspace = true }
 rust-version  = { workspace = true }

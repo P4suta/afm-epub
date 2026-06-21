@@ -1,6 +1,7 @@
 //! Phase 1 — discover.
 //!
-//! Walks the input directory, collects the afm sources in spine order
+//! Walks the input directory, collects the Aozora Flavored Markdown
+//! sources in spine order
 //! (lexicographic for now; the metadata file may override), and parses
 //! the `book.toml` into a structured [`Metadata`] value.
 

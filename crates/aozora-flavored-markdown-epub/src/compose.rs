@@ -25,7 +25,7 @@ use quick_xml::events::{BytesDecl, BytesEnd, BytesStart, BytesText, Event};
 use quick_xml::writer::Writer;
 use uuid::Uuid;
 
-use crate::discover::Manuscript;
+use crate::discover::{Manuscript, WritingMode};
 use crate::render::RenderOutput;
 use crate::{Error, Result};
 
@@ -69,9 +69,17 @@ pub fn compose(manuscript: &Manuscript, rendered: &RenderOutput) -> Result<Bundl
         })
         .collect();
 
+    // The theme files are writing-mode specific (vertical sets
+    // `writing-mode: vertical-rl` on the root); bundle the one matching
+    // the book and expose it under a single stable name so the XHTML
+    // link stays writing-mode agnostic.
+    let css: &[u8] = match manuscript.metadata.writing_mode {
+        WritingMode::Horizontal => include_bytes!("../assets/aozora-md-horizontal.css"),
+        WritingMode::Vertical => include_bytes!("../assets/aozora-md-vertical.css"),
+    };
     let assets = vec![NamedFile {
-        path: "OEBPS/css/afm.css".to_owned(),
-        contents: include_bytes!("../assets/afm.css").to_vec(),
+        path: "OEBPS/css/aozora-md.css".to_owned(),
+        contents: css.to_vec(),
     }];
 
     Ok(Bundle {
@@ -222,7 +230,7 @@ fn package_opf(
         &mut w,
         ManifestItem {
             id: "css",
-            href: "css/afm.css",
+            href: "css/aozora-md.css",
             media_type: "text/css",
             properties: None,
         },

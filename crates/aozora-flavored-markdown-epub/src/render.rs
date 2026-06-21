@@ -8,7 +8,7 @@
 
 use aozora_flavored_markdown::{Options, render};
 
-use crate::discover::{Manuscript, WritingMode};
+use crate::discover::Manuscript;
 use crate::{Error, Result};
 
 #[derive(Debug, Clone)]
@@ -38,12 +38,7 @@ pub fn render_all(manuscript: &Manuscript) -> Result<RenderOutput> {
             .and_then(|s| s.to_str())
             .unwrap_or("untitled")
             .to_owned();
-        let xhtml = wrap_xhtml(
-            &title,
-            &rendered.html,
-            &manuscript.metadata.language,
-            manuscript.metadata.writing_mode,
-        );
+        let xhtml = wrap_xhtml(&title, &rendered.html, &manuscript.metadata.language);
         items.push(SpineItem {
             href: format!("chapter-{:03}.xhtml", idx + 1),
             title,
@@ -68,13 +63,13 @@ fn decode_source(source: &crate::discover::SourceFile) -> Result<String> {
     }
 }
 
-fn wrap_xhtml(title: &str, body_html: &str, lang: &str, mode: WritingMode) -> String {
+fn wrap_xhtml(title: &str, body_html: &str, lang: &str) -> String {
     let title = escape_attr(title);
     let lang = escape_attr(lang);
-    let body_class = match mode {
-        WritingMode::Horizontal => "afm-horizontal",
-        WritingMode::Vertical => "afm-vertical",
-    };
+    // The body opts into the bundled theme via `aozora-md-root`. The
+    // writing mode (horizontal vs. vertical) is decided by which theme
+    // `aozora-md.css` carries, selected per book in `compose`, so the
+    // XHTML itself is writing-mode agnostic.
     format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
@@ -82,9 +77,9 @@ fn wrap_xhtml(title: &str, body_html: &str, lang: &str, mode: WritingMode) -> St
   <head>
     <meta charset="utf-8" />
     <title>{title}</title>
-    <link rel="stylesheet" type="text/css" href="../css/afm.css" />
+    <link rel="stylesheet" type="text/css" href="css/aozora-md.css" />
   </head>
-  <body class="{body_class}">
+  <body class="aozora-md-root">
 {body_html}
   </body>
 </html>
@@ -104,22 +99,59 @@ fn escape_attr(s: &str) -> String {
 mod tests {
     use super::*;
 
-    const CSS: &str = include_str!("../assets/afm.css");
+    const CSS_HORIZONTAL: &str = include_str!("../assets/aozora-md-horizontal.css");
+    const CSS_VERTICAL: &str = include_str!("../assets/aozora-md-vertical.css");
 
-    /// The body class each writing mode emits must have a matching
-    /// selector in the bundled stylesheet, or the mode's CSS never applies.
+    /// Every class token the upstream renderer (aozora-flavored-markdown
+    /// 0.4.1, `AOZORA_MD_CLASSES`) can emit. Both vendored theme files
+    /// must style each one, or rendered output drifts into unstyled markup.
+    const EMITTED_CLASSES: &[&str] = &[
+        "aozora-md-align-end",
+        "aozora-md-annotation",
+        "aozora-md-bouten",
+        "aozora-md-bouten-goma",
+        "aozora-md-bouten-left",
+        "aozora-md-bouten-right",
+        "aozora-md-container",
+        "aozora-md-container-align-end",
+        "aozora-md-container-indent",
+        "aozora-md-container-keigakomi",
+        "aozora-md-container-warichu",
+        "aozora-md-double-ruby",
+        "aozora-md-gaiji",
+        "aozora-md-indent",
+        "aozora-md-kaeriten",
+        "aozora-md-page-break",
+        "aozora-md-section-break",
+        "aozora-md-tcy",
+        "aozora-md-warichu",
+    ];
+
+    /// The wrapper opts into the bundled theme via the `aozora-md-root`
+    /// body class and the `aozora-md.css` link; both theme files must
+    /// define that root selector or the theme never applies.
     #[test]
-    fn every_writing_mode_body_class_is_styled() {
-        for mode in [WritingMode::Horizontal, WritingMode::Vertical] {
-            let xhtml = wrap_xhtml("title", "", "ja", mode);
-            let class = xhtml
-                .split("<body class=\"")
-                .nth(1)
-                .and_then(|rest| rest.split('"').next())
-                .expect("rendered body carries a class attribute");
+    fn wrapper_opts_into_the_bundled_theme() {
+        let xhtml = wrap_xhtml("title", "", "ja");
+        assert!(xhtml.contains("<body class=\"aozora-md-root\">"), "{xhtml}");
+        assert!(xhtml.contains("href=\"css/aozora-md.css\""), "{xhtml}");
+        assert!(CSS_HORIZONTAL.contains(".aozora-md-root"));
+        assert!(CSS_VERTICAL.contains(".aozora-md-root"));
+    }
+
+    /// Guards against CSS drift: every emitted class must be styled in
+    /// both vendored themes.
+    #[test]
+    fn vendored_themes_cover_every_emitted_class() {
+        for class in EMITTED_CLASSES {
+            let selector = format!(".{class}");
             assert!(
-                CSS.contains(&format!(".{class}")),
-                "afm.css has no selector for body class {class:?}"
+                CSS_HORIZONTAL.contains(&selector),
+                "horizontal theme has no selector for {selector}"
+            );
+            assert!(
+                CSS_VERTICAL.contains(&selector),
+                "vertical theme has no selector for {selector}"
             );
         }
     }
